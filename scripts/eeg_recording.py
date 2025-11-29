@@ -1,63 +1,96 @@
 import muselsl as muse
 from muselsl import record, list_muses
 import time
-import threading
+import subprocess
 import signal
-import sys
+import atexit
 
 class EEGRecorder:
-    def __init__(self, duration, filename):
+    def __init__(self, duration, filename, r_id="000"):
         self.date_str = time.strftime("%Y%m%d")
+        self.r_id = r_id 
         self.duration = duration
-        self.filename = f"data/cualitative/cual_survey_{filename}_{self.date_str}.csv"
-        self.recording_start_time = None # None elimina ambiguedad. NO HA INICIADO.
-        self.is_recording = False
-        self.additional_sensors = False
+        self.filename = f"data/cuantitative/_{r_id}_{filename}_{self.date_str}.csv"
+        self.stream_process = None
     
     # 1. CONFIRMAR PAIRING CON MUSE
     def confirm_pairing(self):
         paired = muse.list_muses()
-        mi_muse = paired[0]
         if not paired:
             print(f"NO SE ENCONTRÓ LA MUSE 2.")
             return None
         else:
+            mi_muse = paired[0]
             print(f"SE ENCONTRÓ LA MUSE 2: {mi_muse['name']} - {mi_muse['address']}")
             return mi_muse
-
-    def activate_additionals(self):
-        mi_muse = self.confirm_pairing()
-        if mi_muse:
-            print("ACTIVANDO GIROSCOPIO...")
-            self.additional_sensors = True
+    
+    def start_stream(self):
+        """
+        Inicia el stream en un proceso separado automáticamente.
+        """
+        print("\n******** Iniciando Stream Automáticamente ********")
         
-        print("No se encontró ninguna Muse, activación de giroscopio fallida.")
-        self.additional_sensors = False
+        try:
+            # Iniciar muselsl stream como proceso en background
+            self.stream_process = subprocess.Popen(
+                ['muselsl', 'stream'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Registrar cleanup para cuando el programa termine
+            atexit.register(self.stop_stream)
+            
+            print("Esperando a que el stream se establezca...")
+            time.sleep(5)  # Dar tiempo suficiente
+            print("✅ Stream establecido.\n")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error al iniciar stream: {e}")
+            return False
+    
+    def stop_stream(self):
+        """
+        Detiene el stream process cuando termine el programa.
+        """
+        if self.stream_process:
+            print("\nDeteniendo stream...")
+            self.stream_process.send_signal(signal.SIGINT)
+            self.stream_process.wait(timeout=3)
+            print("Stream detenido.")
     
     
-    def start_recording(self, view_stream=False, ):
-        mi_muse = self.confirm_pairing()
-        if mi_muse:
-            print(f"******** Recording Started for {self.duration} seconds ********")
-            # Variables de update de recordign #
-            self.recording_start_time = time.time()
-            if view_stream:
-                muse.stream(
-                    ppg_enabled=True,
-                    acc_enabled=True,
-                    gyro_enabled=True,
-                )
-            self.is_recording = True
+    def start_recording(self):
+        """
+        Inicia la grabación de datos EEG.
+        
+        IMPORTANTE: Debes iniciar el stream manualmente ANTES en una terminal:
+            muselsl stream
+        
+        Luego ejecuta este script para grabar.
+        """
+        print(f"\n******** Recording Started for {self.duration} seconds ********")
+        print("'muselsl stream' debe estar corriendo en otra terminal.")
+        print("Buscando el stream LSL...")
+        
+        # Dar tiempo para detectar el stream
+        time.sleep(2)
+        
+        try:
+            # Simplemente llamar record() - asume que el stream ya está corriendo
+            print("Grabando...\n")
             record(
                 duration=self.duration,
                 filename=self.filename
             )
-            self.is_recording = False
-            print(f"Recording Successfully Saved. Data saved at: {self.filename}")
-            if view_stream:
-                print("Stopping View Stream...")
-        else:
-            print("No se pudo iniciar la grabación ❌ Muse no está emparejada.")
+            
+            print(f"\nEEG Recording Successfully Saved!")
+            print(f"Data saved at: {self.filename}\n")
+        except Exception as e:
+            print(f"\nError durante la grabación: {e}")
+            print("Asegúrate de que 'muselsl stream' esté corriendo en otra terminal.\n")
     
     def recording_timer(self):
         """

@@ -75,7 +75,7 @@ class CualitativeSurvey:
             writer = csv.DictWriter(csvfile, fieldnames=self.FIELDNAMES)
             writer.writerow(response)
         # Debug print st.
-        print(f"Recording successfully saved at: {self.filename}")
+        print(f"Survey saved at: {self.filename}")
 
 
 
