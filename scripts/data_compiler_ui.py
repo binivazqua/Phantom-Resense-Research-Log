@@ -185,6 +185,23 @@ class MotorIntentDataAcquisition:
         print("\n===== Pre-session survey COMPLETED ======\n")
         time.sleep(1)
     
+    def conduct_post_session_survey(self):
+        """Collect qualitative data after session"""
+        
+        print("\n" + "="*60)
+        print("======== POST-SESSION QUALITATIVE SURVEY ========")
+        print("="*60)
+        
+        survey = CualitativeSurvey(
+            filename=f"prueba_{self.config.participant_id}_{self.config.session_name}",
+            p_id=self.config.participant_id
+        )
+        final_response = survey.ask_final_survey()
+        survey.save_survey_response(final_response)
+        
+        print("\n===== Post-session survey COMPLETED ======\n")
+        time.sleep(1)
+    
     def display_session_info(self):
         """Show session overview to participant"""
 
@@ -336,6 +353,9 @@ class MotorIntentDataAcquisition:
         print("  SESSION COMPLETED!")
         print("="*60)
         print(f"\nTotal trials completed: {len(self.session_metadata)}/{self.config.get_total_trials()}")
+
+        # Post-session survey
+        self.conduct_post_session_survey()
         
         # 7. Save metadata
         self.save_session_metadata()

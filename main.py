@@ -9,7 +9,7 @@ import time
 def main():
     my_survey = CualitativeSurvey(filename="prueba_10_baseline_yoga", p_id="001")
     my_survey.init_csv()
-    responses = my_survey.ask_survey()
+    responses = my_survey.ask_initial_survey()
     my_survey.save_survey_response(responses)
 
     print("Survey Cualitativa Finalizada.\n")
