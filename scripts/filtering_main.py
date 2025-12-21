@@ -1,4 +1,5 @@
 from eeg_csv_handler import EEGFileHandling
+from eeg_plotting import BrainPlotter
 
 # STEP 1: Define data paths
 
@@ -39,3 +40,7 @@ mim_data = loader.motor_imagery[0]  # First motor imagery trial
 
 print("\nData loaded successfully.")
 print(reo_data.head())  # Example: print first few rows of the first rest eyes open trial
+
+# STEP 2: Example of plotting using BrainPlotter class
+plotter = BrainPlotter(reo_data)
+plotter.plotchannel(channel='TP9', seconds=10)  # Plot TP9 channel
