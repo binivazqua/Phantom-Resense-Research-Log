@@ -146,6 +146,8 @@ class MotorIntentDataAcquisition:
         self.trial_sequence = []
         self.session_metadata = []
         self.recorder = None
+        self.survey = None
+        self.initial_response = None
         
     def generate_trial_sequence(self):
         """Generate randomized or blocked trial sequence"""
@@ -174,13 +176,12 @@ class MotorIntentDataAcquisition:
         print("======== PRE-SESSION QUALITATIVE SURVEY ========")
         print("="*60)
         
-        survey = CualitativeSurvey(
+        self.survey = CualitativeSurvey(
             filename=f"prueba_{self.config.participant_id}_{self.config.session_name}",
             p_id=self.config.participant_id
         )
-        survey.init_csv()
-        response = survey.ask_survey()
-        survey.save_survey_response(response)
+        self.survey.init_csv()
+        self.initial_response = self.survey.ask_initial_survey()
         
         print("\n===== Pre-session survey COMPLETED ======\n")
         time.sleep(1)
@@ -192,12 +193,8 @@ class MotorIntentDataAcquisition:
         print("======== POST-SESSION QUALITATIVE SURVEY ========")
         print("="*60)
         
-        survey = CualitativeSurvey(
-            filename=f"prueba_{self.config.participant_id}_{self.config.session_name}",
-            p_id=self.config.participant_id
-        )
-        final_response = survey.ask_final_survey()
-        survey.save_survey_response(final_response)
+        final_response = self.survey.ask_final_survey()
+        self.survey.save_survey_response(self.initial_response, final_response)
         
         print("\n===== Post-session survey COMPLETED ======\n")
         time.sleep(1)
@@ -305,9 +302,9 @@ class MotorIntentDataAcquisition:
     
     def save_session_metadata(self):
         """Save session metadata to CSV"""
-        metadata_filename = f"data/cualitative/session_metadata_{self.config.participant_id}_{self.config.session_name}_{time.strftime('%Y%m%d')}.csv"
+        metadata_filename = f"new_data/cualitative/session_metadata_{self.config.participant_id}_{self.config.session_name}_{time.strftime('%Y%m%d')}.csv"
         
-        Path("data/cualitative").mkdir(parents=True, exist_ok=True)
+        Path("new_data/cualitative").mkdir(parents=True, exist_ok=True)
         
         with open(metadata_filename, 'w', newline='', encoding='utf-8') as f:
             if self.session_metadata:

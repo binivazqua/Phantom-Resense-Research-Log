@@ -8,7 +8,7 @@ import time
 class CualitativeSurvey:
     def __init__(self, filename, p_id):
         self.date_str = time.strftime("%Y%m%d")  # Fecha consistente para toda la sesión
-        self.filename = f"data/cualitative/cual_survey_{filename}_{self.date_str}.csv"
+        self.filename = f"new_data/cualitative/cual_survey_{filename}_{self.date_str}.csv"
         self.p_id = p_id
 
     # 2. Define los headers.
