@@ -72,6 +72,37 @@ class BrainPlotter:
 
         return fig # Return the plot object for further use if needed
     
-   
+    def compare_plots(self, df_1, df_2, channel: str, seconds: float):
+        """
+        Compare the same channel from two different DataFrames over a specified duration.
+        Args:
+            df_1: First DataFrame containing EEG data (REST).
+            df_2: Second DataFrame containing EEG data (ACTION).
+            channel: Channel name to compare ('TP9', 'AF7', 'AF8', 'TP10')
+            seconds: Duration to plot in seconds
+        """
+        
+        data_time = np.arange(len(df_1)) / self.sampling_rate
+        duration = int(self.sampling_rate * seconds)
+        time_x = data_time[:duration]
+        
+        signal_1 = df_1[channel][:duration]
+        signal_2 = df_2[channel][:duration]
+
+        global_ymin = min(signal_1.min(), signal_2.min())
+        global_ymax = max(signal_1.max(), signal_2.max())
+        
+        fig = plt.figure(figsize=(10, 4))
+        plt.plot(time_x, signal_1, label='Trial 1')
+        plt.plot(time_x, signal_2, label='Trial 2', alpha=0.7)
+        plt.title(f'Comparison of EEG Channel: {channel} for {seconds} seconds')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Amplitude (µV)')
+        plt.grid()
+        plt.legend()
+        plt.ylim(global_ymin, global_ymax)
+        plt.show()
+
+        return fig # Return the plot object for further use if needed
 
 
