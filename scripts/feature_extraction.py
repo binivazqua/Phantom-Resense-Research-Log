@@ -129,7 +129,7 @@ class FeatureExtractor:
         )
 
     
-    def plot_features(self, times, feature_values, feature_name, channel_name):
+    def plot_features(self, time_rest, time_active, feature_val_rest, feature_val_active, feature_name, channel_name):
         """
         Plot extracted features over time.
         
@@ -146,13 +146,12 @@ class FeatureExtractor:
         """
         import matplotlib.pyplot as plt
 
+        # time normalization is not needed here as both time_rest and time_active are in seconds
+
         plt.figure(figsize=(10, 4))
-
-        # If feature_values is 2D (multiple features), plot each
-        for feature in feature_values:
-            plt.plot(times, feature, label=f'{feature_name} - {feature_values[1]}')
-
-
+        plt.plot(time_rest, feature_val_rest, label='Rest', color='cyan')
+        plt.plot(time_active, feature_val_active, label='Active', color='purple')
+        plt.legend()
         plt.title(f'Extracted {feature_name} for Channel: {channel_name}')
         plt.xlabel('Time (s)')
         plt.ylabel(feature_name)

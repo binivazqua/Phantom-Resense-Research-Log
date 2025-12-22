@@ -57,11 +57,19 @@ class BrainPlotter:
         duration = int(self.sampling_rate * seconds)
         time_x = data_time[:duration]
 
+        channel_colors = {
+            "TP9": "cyan",
+            "AF7": "purple",
+            "AF8": "magenta",
+            "TP10": "pink"
+        }
+
+
 
         for i, ch in enumerate(channels):
             signal = self.df[ch].values
             signal_points = signal[:duration]
-            plt.plot(time_x, signal_points + i * offset, label=ch)
+            plt.plot(time_x, signal_points + i * offset, label=ch, color=channel_colors[ch])
         
         plt.title(f'EEG Channels: {", ".join(channels)} for {seconds} seconds')
         plt.xlabel('Time (s)')
