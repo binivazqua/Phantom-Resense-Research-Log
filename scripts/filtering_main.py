@@ -1,5 +1,6 @@
 from eeg_csv_handler import EEGFileHandling
 from eeg_plotting import BrainPlotter
+from filtering_handler import DataFilter
 
 # STEP 1: Define data paths
 
@@ -44,5 +45,12 @@ print(reo_data.head())  # Example: print first few rows of the first rest eyes o
 # STEP 2: Example of plotting using BrainPlotter class
 plotter = BrainPlotter(reo_data)
 plotter.plotchannel(channel='AF7', seconds=10)  
-plotter.plot_multiple_channels(channels=['TP9', 'AF7', 'AF8', 'TP10'], seconds=10)
+# plotter.plot_multiple_channels(channels=['TP9', 'AF7', 'AF8', 'TP10'], seconds=10)
 
+# STEP 3: Filter data and plot again
+filter = DataFilter(lowcut=1.0, highcut=50.0, fs=256.0, notch_freq=60.0, quality_factor=30.0)
+
+reo_data_filtered = filter.filter_data(reo_data)
+plotter_filtered = BrainPlotter(reo_data_filtered)
+plotter_filtered.plotchannel(channel='AF7', seconds=10)
+# plotter_filtered.plot_multiple_channels(channels=['TP9', 'AF7', 'AF8', 'TP10'], seconds=10)

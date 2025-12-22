@@ -42,7 +42,7 @@ class BrainPlotter:
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude (µV)')
         plt.grid()
-        plt.ylim(-200, 200)
+        plt.ylim(-600, 600)
         plt.show()
 
         return fig # Return the plot object for further use if needed
@@ -67,7 +67,7 @@ class BrainPlotter:
         plt.ylabel('Amplitude (µV)')
         plt.grid()
         plt.legend(loc='upper right')
-        plt.ylim(-200, offset * len(channels))
+        plt.ylim(-600, offset * len(channels))
         plt.show()
 
         return fig # Return the plot object for further use if needed
