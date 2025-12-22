@@ -43,4 +43,6 @@ print(reo_data.head())  # Example: print first few rows of the first rest eyes o
 
 # STEP 2: Example of plotting using BrainPlotter class
 plotter = BrainPlotter(reo_data)
-plotter.plotchannel(channel='TP9', seconds=10)  # Plot TP9 channel
+plotter.plotchannel(channel='AF7', seconds=10)  
+plotter.plot_multiple_channels(channels=['TP9', 'AF7', 'AF8', 'TP10'], seconds=10)
+

@@ -32,11 +32,11 @@ class BrainPlotter:
         """
         # TODO: Extract channel data for the specified duration
         data_time = np.arange(len(self.df)) / self.sampling_rate
-        duration = self.sampling_rate * seconds
+        duration = int(self.sampling_rate * seconds)
         time_x = data_time[:duration]
         signal = self.df[channel][:duration]
         # TODO: Plot using matplotlib
-        plt.figure(figsize=(10, 4))
+        fig = plt.figure(figsize=(10, 4))
         plt.plot(time_x, signal)
         plt.title(f'EEG Channel: {channel} for {seconds} seconds')
         plt.xlabel('Time (s)')
@@ -45,25 +45,33 @@ class BrainPlotter:
         plt.ylim(-200, 200)
         plt.show()
 
-        return brain_plot # Return the plot object for further use if needed
-
+        return fig # Return the plot object for further use if needed
     
-    def saveplot(self, channel: str, seconds: float, filename: Optional[str] = None):
-        """
-        Save the plot of a specific channel for a given duration.
+    def plot_multiple_channels(self, channels: [], seconds: float):
         
-        Args:
-            channel: Channel name
-            seconds: Duration in seconds
-            filename: Optional filename (default: 'channel_seconds.png')
-        """
-        plt.close('all')  # Close any existing plots first
-        fig = self.plotchannel(channel, seconds)
-        plt.close()  # Close the display
+        offset = 300
+        fig = plt.figure(figsize=(10,4))
+
+        data_time = np.arange(len(self.df)) / self.sampling_rate
+        duration = int(self.sampling_rate * seconds)
+        time_x = data_time[:duration]
+
+
+        for i, ch in enumerate(channels):
+            signal = self.df[ch].values
+            signal_points = signal[:duration]
+            plt.plot(time_x, signal_points + i * offset, label=ch)
         
-        if filename is None:
-            filename = f"{channel}_{seconds}s.png"
-        fig.savefig(filename)
-        plt.close(fig)
+        plt.title(f'EEG Channels: {", ".join(channels)} for {seconds} seconds')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Amplitude (µV)')
+        plt.grid()
+        plt.legend(loc='upper right')
+        plt.ylim(-200, offset * len(channels))
+        plt.show()
+
+        return fig # Return the plot object for further use if needed
+    
+   
 
 
