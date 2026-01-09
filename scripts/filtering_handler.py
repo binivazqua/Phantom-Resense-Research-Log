@@ -38,3 +38,4 @@ class DataFilter:
             new_signal = notch_signal
             filtered_df[column] = new_signal
         return filtered_df
+    
