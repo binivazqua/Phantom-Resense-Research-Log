@@ -2,6 +2,7 @@ from eeg_csv_handler import EEGFileHandling
 from eeg_plotting import BrainPlotter
 from filtering_handler import DataFilter
 from feature_extraction import FeatureExtractor
+from frequency_handler import FrequencyHandler
 
 # STEP 1: Define data paths
 
@@ -70,57 +71,29 @@ mi_data_filtered_plotter.plot_multiple_channels(
     seconds=10
 )
 
+# Step 4: Frequency segmentation
+mi_freq_seg = FrequencyHandler()
 
-# # reo_plotter_filtered.plotchannel(channel='AF7', seconds=10, title='Rest Eyes Open - Filtered')
-# # rec_plotter_filtered.plotchannel(channel='AF7', seconds=10, title='Rest Eyes Closed - Filtered')
-# # plotter_filtered.plot_multiple_channels(channels=['TP9', 'AF7', 'AF8', 'TP10'], seconds=10)
+mi_mu_df = mi_freq_seg.freq_extraction(mi_data_filtered, "mu")
+mi_beta_df = mi_freq_seg.freq_extraction(mi_data_filtered, "beta")
 
-# rest_c1omparison_plot = rec_plotter_filtered.compare_plots(
-#     rec_data_filtered,
-#     reo_data_filtered,
-#     channel='AF7',
-#     seconds=10,
-#     plot_type='overlap'
-# )
+# and plot new data.
+mi_mu_plotter = BrainPlotter(mi_mu_df)
+mi_beta_plotter = BrainPlotter(mi_beta_df)
+mi_mu_plotter.plot_multiple_channels(
+    channels=["AF7", "TP9"],
+    seconds= 10,
+    title="Mu Frequency"
+)
 
-# rest_comparison_plot = rec_plotter_filtered.compare_plots(
-#     rec_data_filtered,
-#     reo_data_filtered,
-#     channel='AF7',
-#     seconds=10,
-#     plot_type='sidetoside'
-# )
-
-# # STEP 4: Extract and compare RMS features
-# channel = 'AF7'
-
-# # Extract RMS features for both conditions
-# rec_extractor = FeatureExtractor(rec_data_filtered[channel])
-# reo_extractor = FeatureExtractor(reo_data_filtered[channel])
-
-# # Extract features with 1-second windows and 50% overlap
-# rec_times, rec_rms, rec_mav, rec_energy = rec_extractor.window_feature_extraction(
-#     df=rec_data_filtered[channel],
-#     window_duration=1.0,
-#     overlap=0.5
-# )
-
-# reo_times, reo_rms, reo_mav, reo_energy = reo_extractor.window_feature_extraction(
-#     df=reo_data_filtered[channel],
-#     window_duration=1.0,
-#     overlap=0.5
-# )
+mi_beta_plotter.plot_multiple_channels(
+    channels=["AF7", "TP9"],
+    seconds= 10,
+    title="Beta Frequency"
+)
 
 
-# reo_extractor.plot_features(
-#     time_rest=rec_times,
-#     time_active=reo_times,
-#     feature_val_rest=rec_rms,
-#     feature_val_active=reo_rms,
-#     feature_name='RMS',
-#     channel_name=channel
-# )
 
-# print(f"\nRMS Statistics for {channel}:")
-# print(f"Rest Eyes Closed - Mean: {rec_rms.mean():.2f}, Std: {rec_rms.std():.2f}")
-# print(f"Rest Eyes Open - Mean: {reo_rms.mean():.2f}, Std: {reo_rms.std():.2f}")
+
+
+

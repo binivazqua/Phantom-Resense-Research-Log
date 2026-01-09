@@ -48,7 +48,7 @@ class BrainPlotter:
 
         return fig # Return the plot object for further use if needed
     
-    def plot_multiple_channels(self, channels: [], seconds: float):
+    def plot_multiple_channels(self, channels: [], seconds: float, title: Optional[str]=None):
         
         offset = 300
         fig = plt.figure(figsize=(10,4))
@@ -71,7 +71,7 @@ class BrainPlotter:
             signal_points = signal[:duration]
             plt.plot(time_x, signal_points + i * offset, label=ch, color=channel_colors[ch])
         
-        plt.title(f'EEG Channels: {", ".join(channels)} for {seconds} seconds')
+        plt.title(f'Signal {title}, Channels: {", ".join(channels)} for {seconds} seconds')
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude (µV)')
         plt.grid()

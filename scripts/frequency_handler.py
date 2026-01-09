@@ -1,4 +1,4 @@
-import mne, numpy as np, scipy.signal as signal
+import mne, numpy as np, scipy.signal as signal, pandas as pd
 
 
 class FrequencyHandler:
@@ -15,17 +15,17 @@ class FrequencyHandler:
     F_BANDS = {
         'delta': (0.5, 4),
         'theta': (4, 8),
-        'alpha':(8, 13),
+        'mu':(8, 13),
         'beta':(13, 30),
         'gamma':(30, 100),
     }
 
-    def __init__(self, sfreq=256.0):
+    def __init__(self, sfreq=256.0, bfilt_order=5):
         self.sfreq = sfreq
         self.bfilt_order = bfilt_order
         self.nyquist = 0.5 * sfreq
     
-    def freqseg_bandpass(self, lowcut: float, highcut:float) -> Tuple[np.ndarray, np.ndarray]:
+    def freqseg_bandpass(self, lowcut: float, highcut:float) -> tuple[np.ndarray, np.ndarray]:
         """
             Creates a specific Bandpass filter for frequency segmentation.
         """
