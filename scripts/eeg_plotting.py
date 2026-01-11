@@ -81,7 +81,7 @@ class BrainPlotter:
 
         return fig # Return the plot object for further use if needed
     
-    def compare_plots(self, df_1, df_2, channel: str, seconds: float, plot_type: str = 'overlap'):
+    def compare_plots(self, df_1, df_2, channel: str, seconds: float, plot_type: str = 'overlap', title: Optional[str]=None, df_1_alias:Optional[str]=None,df_2_alias:Optional[str]=None):
             """
             Compare the same channel from two different DataFrames over a specified duration.
             Args:
@@ -104,9 +104,9 @@ class BrainPlotter:
             
             if plot_type == 'overlap':
                 fig = plt.figure(figsize=(10, 4))
-                plt.plot(time_x, signal_1, label='Trial 1', color='cyan')
-                plt.plot(time_x, signal_2, label='Trial 2', color='purple', alpha=0.7)
-                plt.title(f'Comparison of EEG Channel: {channel} for {seconds} seconds')
+                plt.plot(time_x, signal_1, label={df_1_alias}, color='cyan')
+                plt.plot(time_x, signal_2, label={df_2_alias}, color='purple', alpha=0.7)
+                plt.title(f'Comparison of {title} EEG Channel: {channel} for {seconds} seconds')
                 plt.xlabel('Time (s)')
                 plt.ylabel('Amplitude (µV)')
                 plt.grid()
@@ -134,7 +134,7 @@ class BrainPlotter:
                 ax2.legend()
                 ax2.set_ylim(global_ymin, global_ymax)
                 
-                fig.suptitle(f'Comparison of EEG Channel: {channel} for {seconds} seconds', fontsize=14, y=0.995)
+                fig.suptitle(f'Comparison of{title} EEG Channel: {channel} for {seconds} seconds', fontsize=14, y=0.995)
                 plt.tight_layout()
                 plt.show()
             
