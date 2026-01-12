@@ -236,11 +236,11 @@ mu_mi_times, mu_mi_rms, mu_mi_mav, mu_mi_energy = feature_extractor.window_featu
 feature_extractor.plot_features(
     time_rest= mu_rest_times,
     time_active= mu_mi_times,
-    feature_val_rest= mu_rest_energy,
-    feature_val_active= mu_mi_energy,
-    feature_name="Energy",
+    feature_val_rest= mu_rest_rms,
+    feature_val_active= mu_mi_rms,
+    feature_name="RMS",
     channel_name="AF7",
-    title="Mu Band Energy Feature Comparison"
+    title="Mu Band RMS Feature Comparison"
 )
 
 # Feature extraction on beta frequency
@@ -266,11 +266,11 @@ beta_mi_times, beta_mi_rms, beta_mi_mav, beta_mi_energy = feature_extractor.wind
 feature_extractor.plot_features(
     time_rest=beta_rest_times,
     time_active=beta_mi_times,
-    feature_val_rest=beta_rest_energy,
-    feature_val_active=beta_mi_energy,
-    feature_name="Energy",
+    feature_val_rest=beta_rest_rms,
+    feature_val_active=beta_mi_rms,
+    feature_name="RMS",
     channel_name="AF7",
-    title="Beta Band Energy Feature Comparison"
+    title="Beta Band RMS Feature Comparison"
 )
 
 # TP9 CHANNEL ANALYSIS
@@ -292,11 +292,11 @@ mu_mi_times_tp9, mu_mi_rms_tp9, mu_mi_mav_tp9, mu_mi_energy_tp9 = feature_extrac
 feature_extractor.plot_features(
     time_rest=mu_rest_times_tp9,
     time_active=mu_mi_times_tp9,
-    feature_val_rest=mu_rest_energy_tp9,
-    feature_val_active=mu_mi_energy_tp9,
-    feature_name="Energy",
+    feature_val_rest=mu_rest_mav_tp9,
+    feature_val_active=mu_mi_mav_tp9,
+    feature_name="MAV",
     channel_name="TP9",
-    title="Mu Band Energy Feature Comparison"
+    title="Mu Band MAV Feature Comparison"
 )
 
 # Extract BETA band features for TP9
@@ -316,9 +316,9 @@ beta_mi_times_tp9, beta_mi_rms_tp9, beta_mi_mav_tp9, beta_mi_energy_tp9 = featur
 feature_extractor.plot_features(
     time_rest=beta_rest_times_tp9,
     time_active=beta_mi_times_tp9,
-    feature_val_rest=beta_rest_energy_tp9,
-    feature_val_active=beta_mi_energy_tp9,
-    feature_name="Energy",
+    feature_val_rest=beta_rest_mav_tp9,
+    feature_val_active=beta_mi_mav_tp9,
+    feature_name="MAV",
     channel_name="TP9",
-    title="Beta Band Energy Feature Comparison"
+    title="Beta Band MAV Feature Comparison"
 )
