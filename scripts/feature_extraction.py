@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional
 
 class FeatureExtractor:
     def __init__(self, dataframe):
@@ -22,7 +23,7 @@ class FeatureExtractor:
 
         for column in motor_dataframe.columns:
             rest_mean = rest_df_tonorm[column].mean()
-            rest_std = motor_df_tonorm[column].std()
+            rest_std = rest_df_tonorm[column].std()
             z_rest = (rest_df_tonorm[column] - rest_mean) / rest_std
             z_motor = (motor_df_tonorm[column] - rest_mean) / rest_std
             motor_df_tonorm[column] = z_motor
@@ -129,7 +130,7 @@ class FeatureExtractor:
         )
 
     
-    def plot_features(self, time_rest, time_active, feature_val_rest, feature_val_active, feature_name, channel_name):
+    def plot_features(self, time_rest, time_active, feature_val_rest, feature_val_active, feature_name, channel_name, title: Optional[str]=None):
         """
         Plot extracted features over time.
         
@@ -152,7 +153,7 @@ class FeatureExtractor:
         plt.plot(time_rest, feature_val_rest, label='Rest', color='cyan')
         plt.plot(time_active, feature_val_active, label='Active', color='purple')
         plt.legend()
-        plt.title(f'Extracted {feature_name} for Channel: {channel_name}')
+        plt.title(f'{title} {feature_name} for Channel: {channel_name}')
         plt.xlabel('Time (s)')
         plt.ylabel(feature_name)
         plt.grid()
