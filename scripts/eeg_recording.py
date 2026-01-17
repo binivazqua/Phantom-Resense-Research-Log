@@ -107,6 +107,7 @@ class EEGRecorder:
         is_active = elapsed_time < self.duration and self.is_recording
         
         return (is_active, elapsed_time, remaining_time)
+
     
     def get_recording_progress(self):
         """

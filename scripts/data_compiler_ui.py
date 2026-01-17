@@ -89,6 +89,12 @@ class AudioCues:
         """Sound cue for session ending"""
         print("***** [SESSION END] *****")
         AudioCues.play_beep(sound_file="Glass")
+    
+    @staticmethod
+    def phase_transition(phase_name):
+        """Sound cue for phase changes within hybrid trial (MI -> REST or REST -> MI)"""
+        print(f">>> [TRANSITION: {phase_name}] <<<")
+        AudioCues.play_beep(count=1, sound_file="Ping")
 
 
 # ============================================
@@ -96,11 +102,12 @@ class AudioCues:
 # ============================================
 
 class MotorIntentState:
-    """Defines the four states for motor intent research"""
+    """Defines the states for motor intent research"""
     REST_EYES_CLOSED = "rest_eyes_closed"
     REST_EYES_OPEN = "rest_eyes_open"
     MOTOR_INTENT = "motor_intent"
     MOTOR_IMAGERY = "motor_imagery"
+    MOTOR_IMAGERY_HYBRID = "motor_imagery_hybrid"
     
     @classmethod
     def all_states(cls):
@@ -108,7 +115,8 @@ class MotorIntentState:
             cls.REST_EYES_CLOSED,
             cls.REST_EYES_OPEN,
             cls.MOTOR_INTENT,
-            cls.MOTOR_IMAGERY
+            cls.MOTOR_IMAGERY,
+            cls.MOTOR_IMAGERY_HYBRID
         ]
     
     @classmethod
@@ -117,7 +125,8 @@ class MotorIntentState:
             cls.REST_EYES_CLOSED: "Rest with eyes closed - relax completely",
             cls.REST_EYES_OPEN: "Rest with eyes open - stay calm, minimal blinking",
             cls.MOTOR_INTENT: "Motor Intent - EXECUTE the movement (e.g., clench fist)",
-            cls.MOTOR_IMAGERY: "Motor Imagery - IMAGINE the movement (no actual movement)"
+            cls.MOTOR_IMAGERY: "Motor Imagery - IMAGINE the movement (no actual movement)",
+            cls.MOTOR_IMAGERY_HYBRID: "Hybrid Motor Imagery - Alternating 5s IMAGINE + 10s REST periods"
         }
         return descriptions.get(state, "Unknown state")
 
@@ -132,8 +141,17 @@ class SessionConfig:
         self.rest_between_trials = 10  # seconds
         self.movement_type = "right_hand_fist"  # Type of motor task
         
+        # Hybrid trial configuration
+        self.hybrid_mi_duration = 5  # seconds of motor imagery
+        self.hybrid_rest_duration = 10  # seconds of rest
+        self.hybrid_cycles = 2  # number of MI+REST cycles per hybrid trial
+        
     def get_total_trials(self):
         return len(MotorIntentState.all_states()) * self.trials_per_state
+    
+    def get_hybrid_total_duration(self):
+        """Calculate total duration for one hybrid trial"""
+        return self.hybrid_cycles * (self.hybrid_mi_duration + self.hybrid_rest_duration)
 
 
 class MotorIntentDataAcquisition:
@@ -218,9 +236,149 @@ class MotorIntentDataAcquisition:
         
         input("Press [ENTER] when ready to begin...")
     
-    def run_trial(self, trial_info):
-        """Execute a single trial"""
+    def run_hybrid_trial(self, trial_info):
+        """Execute a hybrid motor imagery trial with alternating MI and REST periods"""
         state = trial_info['state']
+        trial_num = trial_info['trial_num']
+        
+        self.current_trial += 1
+        total_trials = self.config.get_total_trials()
+        
+        print("\n" + "-"*60)
+        print(f"  HYBRID TRIAL {self.current_trial}/{total_trials}")
+        print(f"  State: {state}")
+        print(f"  Trial #{trial_num} for this state")
+        print("-"*60)
+        print(f"\n{MotorIntentState.get_description(state)}")
+        print(f"Cycles: {self.config.hybrid_cycles} x ({self.config.hybrid_mi_duration}s MI + {self.config.hybrid_rest_duration}s REST)\n")
+        
+        # Countdown
+        print("Countdown to start:")
+        for i in range(3, 0, -1):
+            print(f"  {i}...")
+            time.sleep(1)
+        
+        # Start signal
+        print("\n===== START HYBRID RECORDING =====")
+        AudioCues.state_transition(state)
+        
+        # Prepare filename for base recording
+        base_filename = f"eeg_{state}_trial{trial_num:02d}_{self.config.movement_type}"
+        full_path = f"new_data/cuantitative/_{self.config.participant_id}_{base_filename}_{time.strftime('%Y%m%d')}.csv"
+        
+        # Ensure directory exists
+        Path("new_data/cuantitative").mkdir(parents=True, exist_ok=True)
+        
+        # Record with phase tracking
+        try:
+            from pylsl import StreamInlet, resolve_byprop
+            import pandas as pd
+            
+            print("Looking for EEG stream...")
+            streams = resolve_byprop('type', 'EEG', timeout=5)
+            
+            if not streams:
+                print("❌ No EEG stream found!")
+                return False
+            
+            inlet = StreamInlet(streams[0], max_chunklen=12)
+            info = inlet.info()
+            
+            # Get channel info
+            ch = info.desc().child('channels').first_child()
+            ch_names = []
+            for _ in range(info.channel_count()):
+                ch_names.append(ch.child_value('label'))
+                ch = ch.next_sibling()
+            
+            print(f"✓ Connected to stream: {info.name()}")
+            print(f"  Channels: {ch_names}")
+            print(f"\nRecording hybrid trial...\n")
+            
+            # Storage for samples with labels
+            all_samples = []
+            timestamps = []
+            labels = []
+            
+            start_time = time.time()
+            cycle_duration = self.config.hybrid_mi_duration + self.config.hybrid_rest_duration
+            
+            for cycle in range(self.config.hybrid_cycles):
+                cycle_start = time.time()
+                
+                # ===== MOTOR IMAGERY PHASE =====
+                print(f"\n[Cycle {cycle+1}/{self.config.hybrid_cycles}]")
+                print(f">>> MOTOR IMAGERY ACTIVE - {self.config.hybrid_mi_duration}s <<<")
+                AudioCues.phase_transition("MOTOR IMAGERY")
+                
+                mi_phase_start = time.time()
+                while time.time() - mi_phase_start < self.config.hybrid_mi_duration:
+                    sample, timestamp = inlet.pull_sample(timeout=0.1)
+                    if sample:
+                        all_samples.append(sample)
+                        timestamps.append(timestamp)
+                        labels.append('MI')
+                
+                # ===== REST PHASE =====
+                print(f"\n>>> REST PERIOD - {self.config.hybrid_rest_duration}s <<<")
+                AudioCues.phase_transition("REST")
+                
+                rest_phase_start = time.time()
+                while time.time() - rest_phase_start < self.config.hybrid_rest_duration:
+                    sample, timestamp = inlet.pull_sample(timeout=0.1)
+                    if sample:
+                        all_samples.append(sample)
+                        timestamps.append(timestamp)
+                        labels.append('REST')
+            
+            # Create DataFrame with labels
+            df = pd.DataFrame(all_samples, columns=ch_names)
+            df['timestamps'] = timestamps
+            df['label'] = labels
+            
+            # Save to CSV
+            df.to_csv(full_path, index=False)
+            
+            print("\n********************** HYBRID TRIAL COMPLETE **********************")
+            AudioCues.recording_complete()
+            
+            # Save metadata
+            self.session_metadata.append({
+                'trial': self.current_trial,
+                'state': state,
+                'trial_num_for_state': trial_num,
+                'duration': f"{self.config.hybrid_cycles} cycles",
+                'mi_duration': self.config.hybrid_mi_duration,
+                'rest_duration': self.config.hybrid_rest_duration,
+                'cycles': self.config.hybrid_cycles,
+                'filename': full_path,
+                'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                'samples_collected': len(all_samples),
+                'mi_samples': labels.count('MI'),
+                'rest_samples': labels.count('REST')
+            })
+            
+            print(f"\n✓ Saved: {full_path}")
+            print(f"  Total samples: {len(all_samples)}")
+            print(f"  MI samples: {labels.count('MI')} | REST samples: {labels.count('REST')}")
+            
+            return True
+            
+        except Exception as e:
+            print(f"\n❌ ERROR during hybrid recording: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def run_trial(self, trial_info):
+        """Execute a single trial (dispatches to hybrid or standard recording)"""
+        state = trial_info['state']
+        
+        # Check if this is a hybrid trial
+        if state == MotorIntentState.MOTOR_IMAGERY_HYBRID:
+            return self.run_hybrid_trial(trial_info)
+        
+        # Standard trial execution
         trial_num = trial_info['trial_num']
         duration = trial_info['duration']
         
