@@ -9,6 +9,7 @@ States:
   - Rest (Eyes Open)
   - Motor Intent
   - Motor Imagery
+  - Motor Imagery Hybrid (NEW) - Alternating 5s MI + 10s REST with labels
 
 Features:
   - Audio cues for state transitions
@@ -16,6 +17,7 @@ Features:
   - Integration with EEGRecorder
   - Pre-session qualitative survey
   - Labeled data files for ML training
+  - Within-trial phase labeling for hybrid recordings
 
 PREREQUISITE: Must have 'muselsl stream' running in another terminal
 """
@@ -237,7 +239,7 @@ class MotorIntentDataAcquisition:
         input("Press [ENTER] when ready to begin...")
     
     def run_hybrid_trial(self, trial_info):
-        """Execute a hybrid motor imagery trial with alternating MI and REST periods"""
+        """Execute a hybrid motor imagery trial with alternating MI and REST periods with audio ques and added labels to the output data."""
         state = trial_info['state']
         trial_num = trial_info['trial_num']
         
@@ -278,7 +280,7 @@ class MotorIntentDataAcquisition:
             streams = resolve_byprop('type', 'EEG', timeout=5)
             
             if not streams:
-                print("❌ No EEG stream found!")
+                print(" No EEG stream found.")
                 return False
             
             inlet = StreamInlet(streams[0], max_chunklen=12)
@@ -293,7 +295,7 @@ class MotorIntentDataAcquisition:
             
             print(f"✓ Connected to stream: {info.name()}")
             print(f"  Channels: {ch_names}")
-            print(f"\nRecording hybrid trial...\n")
+            print(f"\nRecording hybrid trial (...)\n")
             
             # Storage for samples with labels
             all_samples = []
@@ -317,7 +319,7 @@ class MotorIntentDataAcquisition:
                     if sample:
                         all_samples.append(sample)
                         timestamps.append(timestamp)
-                        labels.append('MI')
+                        labels.append('MI') # NEW LABEL
                 
                 # ===== REST PHASE =====
                 print(f"\n>>> REST PERIOD - {self.config.hybrid_rest_duration}s <<<")
@@ -329,7 +331,7 @@ class MotorIntentDataAcquisition:
                     if sample:
                         all_samples.append(sample)
                         timestamps.append(timestamp)
-                        labels.append('REST')
+                        labels.append('REST') #NEW LABEL
             
             # Create DataFrame with labels
             df = pd.DataFrame(all_samples, columns=ch_names)
@@ -342,7 +344,7 @@ class MotorIntentDataAcquisition:
             print("\n********************** HYBRID TRIAL COMPLETE **********************")
             AudioCues.recording_complete()
             
-            # Save metadata
+            # Save metadata -> useful for analyisis and detailed description.
             self.session_metadata.append({
                 'trial': self.current_trial,
                 'state': state,
@@ -365,7 +367,7 @@ class MotorIntentDataAcquisition:
             return True
             
         except Exception as e:
-            print(f"\n❌ ERROR during hybrid recording: {e}")
+            print(f"\nERROR during recording: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -471,7 +473,7 @@ class MotorIntentDataAcquisition:
                 writer.writeheader()
                 writer.writerows(self.session_metadata)
         
-        print(f"\n📊 Session metadata saved: {metadata_filename}")
+        print(f"\n Session metadata saved at: {metadata_filename}")
     
     def run_session(self):
         """Execute the complete data acquisition session"""
