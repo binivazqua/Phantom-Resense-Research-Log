@@ -92,14 +92,17 @@ class CualitativeSurvey:
 
         return row;
 
-    def save_survey_response(self, initial_response: dict, final_response: dict):
+    def save_survey_response(self, initial_response: dict, final_response: dict = None):
         """
             Guarda la respuesta de la encuesta en el CSV.
             Usa DictWriter para escribir el diccionario estilo "lenguaje natural".
         """
         with open(self.filename, mode="a", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.FIELDNAMES)
-            total_response = {**initial_response, **final_response}
+            if final_response:
+                total_response = {**initial_response, **final_response}
+            else:
+                total_response = initial_response
             writer.writerow(total_response)
         # Debug print st.
         print(f"Survey saved at: {self.filename}")

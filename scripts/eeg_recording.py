@@ -6,12 +6,18 @@ import signal
 import atexit
 
 class EEGRecorder:
+    """
+    Clase básica para grabación de EEG con Muse 2.
+    Para sesiones completas con audio cues y múltiples estados, usar data_compiler_ui.py
+    """
     def __init__(self, duration, filename, r_id="000"):
         self.date_str = time.strftime("%Y%m%d")
         self.r_id = r_id 
         self.duration = duration
-        self.filename = f"data/cuantitative/_{r_id}_{filename}_{self.date_str}.csv"
+        self.filename = f"new_data/cuantitative/_{r_id}_{filename}_{self.date_str}.csv"
         self.stream_process = None
+        self.recording_start_time = None
+        self.is_recording = False
     
     # 1. CONFIRMAR PAIRING CON MUSE
     def confirm_pairing(self):
