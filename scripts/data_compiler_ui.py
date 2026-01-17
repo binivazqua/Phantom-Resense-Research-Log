@@ -1,14 +1,14 @@
-#!/usr/bin/env python3
 """
+Written by Bini Vázquez.
+
 Motor Intent EEG Data Acquisition Interface
-============================================
 Research-oriented script for labeled EEG data collection with Muse 2 headset.
 
 States:
   - Rest (Eyes Closed)
   - Rest (Eyes Open)
-  - Motor Intent
-  - Motor Imagery
+  - Motor Intent (static)* not implemented yet
+  - Motor Imagery (static)
   - Motor Imagery Hybrid (NEW) - Alternating 5s MI + 10s REST with labels
 
 Features:
@@ -19,7 +19,7 @@ Features:
   - Labeled data files for ML training
   - Within-trial phase labeling for hybrid recordings
 
-PREREQUISITE: Must have 'muselsl stream' running in another terminal
+IMPORTANT: Must have 'muselsl stream' running in another terminal
 """
 
 import sys
@@ -36,23 +36,22 @@ from eeg_recording import EEGRecorder
 from variable_handling import CualitativeSurvey
 
 
-# ============================================
-# AUDIO CUE SYSTEM
-# ============================================
+# ******** AUDIO CUES HANDLER ******** #
 
 class AudioCues:
     """Handles all audio feedback for the experiment"""
     
-    @staticmethod
+    @staticmethod # use staticmethod to avoid instance creation
     def play_beep(count=1, sound_file=None):
         """
         Play system beep or sound file
         
         Args:
             count: Number of beeps (for terminal bell)
-            sound_file: macOS sound file name (e.g., 'Ping', 'Glass', 'Tink')
         """
         system = platform.system()
+
+        # CLaude Code handled specific files for me yay
         
         if system == "Darwin" and sound_file:  # macOS
             try:
@@ -99,12 +98,12 @@ class AudioCues:
         AudioCues.play_beep(count=1, sound_file="Ping")
 
 
-# ============================================
-# MOTOR INTENT DATA ACQUISITION SYSTEM
-# ============================================
 
+# *************** MOTOR INTENT DATA ACQUISITION SYSTEM *************** #
+
+# We use "motor intent" to refer to both actual movement execution and motor imagery. -> practically only MI implemented.
 class MotorIntentState:
-    """Defines the states for motor intent research"""
+    """Defines the states for motor intent research case."""
     REST_EYES_CLOSED = "rest_eyes_closed"
     REST_EYES_OPEN = "rest_eyes_open"
     MOTOR_INTENT = "motor_intent"
@@ -136,8 +135,8 @@ class MotorIntentState:
 class SessionConfig:
     """Configuration for a data acquisition session"""
     def __init__(self):
-        self.participant_id = "000"
-        self.session_name = "motor_intent_session"
+        self.participant_id = "000" # Biniza Vazquez default 001.
+        self.session_name = "motor_intent_session" # default session name
         self.trial_duration = 30  # seconds per trial
         self.trials_per_state = 3  # Number of trials for each state
         self.rest_between_trials = 10  # seconds
@@ -156,7 +155,7 @@ class SessionConfig:
         return self.hybrid_cycles * (self.hybrid_mi_duration + self.hybrid_rest_duration)
 
 
-class MotorIntentDataAcquisition:
+class MotorImageryDataAcquisition:
     """
     Main class for conducting motor intent EEG data acquisition sessions
     """
@@ -169,20 +168,29 @@ class MotorIntentDataAcquisition:
         self.survey = None
         self.initial_response = None
         
-    def generate_trial_sequence(self):
-        """Generate randomized or blocked trial sequence"""
+    def generate_trial_sequence(self, hybrid_only=False):
+        """Generate randomized or blocked trial sequence
+        
+        Args:
+            hybrid_only: If True, only generate MOTOR_IMAGERY_HYBRID trials
+        """
         sequence = []
         
         # Create trials for each state
-        for state in MotorIntentState.all_states():
+        states = [MotorIntentState.MOTOR_IMAGERY_HYBRID] if hybrid_only else MotorIntentState.all_states()
+        
+        for state in states:
             for trial_num in range(self.config.trials_per_state):
+                # For hybrid trials, duration is calculated from cycles, not trial_duration
+                duration = self.config.get_hybrid_total_duration() if state == MotorIntentState.MOTOR_IMAGERY_HYBRID else self.config.trial_duration
                 sequence.append({
                     'state': state,
                     'trial_num': trial_num + 1,
-                    'duration': self.config.trial_duration
+                    'duration': duration
                 })
         
-        
+
+        # shuffle might be useful in the future to simulate real physical triggers.
         # import random
         # random.shuffle(sequence)
         
@@ -231,11 +239,12 @@ class MotorIntentDataAcquisition:
         print(f"Total Trials: {self.config.get_total_trials()}")
         print(f"Trial Duration: {self.config.trial_duration}s")
         print(f"Trials per State: {self.config.trials_per_state}")
-        print("\nStates to be recorded:")
+        print("\nState DESCRIPTIONS:")
         for i, state in enumerate(MotorIntentState.all_states(), 1):
             print(f"  {i}. {state}: {MotorIntentState.get_description(state)}")
         print("="*60 + "\n")
         
+        print('If you selected HYBRID trials, just focus on "Hybrid Motor Imagery".')
         input("Press [ENTER] when ready to begin...")
     
     def run_hybrid_trial(self, trial_info):
@@ -293,8 +302,8 @@ class MotorIntentDataAcquisition:
                 ch_names.append(ch.child_value('label'))
                 ch = ch.next_sibling()
             
-            print(f"✓ Connected to stream: {info.name()}")
-            print(f"  Channels: {ch_names}")
+            print(f"Connected to stream: {info.name()}")
+            print(f"Channels: {ch_names}")
             print(f"\nRecording hybrid trial (...)\n")
             
             # Storage for samples with labels
@@ -308,7 +317,7 @@ class MotorIntentDataAcquisition:
             for cycle in range(self.config.hybrid_cycles):
                 cycle_start = time.time()
                 
-                # ===== MOTOR IMAGERY PHASE =====
+                # ===== MOTOR IMAGERY PHASE ===== #
                 print(f"\n[Cycle {cycle+1}/{self.config.hybrid_cycles}]")
                 print(f">>> MOTOR IMAGERY ACTIVE - {self.config.hybrid_mi_duration}s <<<")
                 AudioCues.phase_transition("MOTOR IMAGERY")
@@ -321,7 +330,7 @@ class MotorIntentDataAcquisition:
                         timestamps.append(timestamp)
                         labels.append('MI') # NEW LABEL
                 
-                # ===== REST PHASE =====
+                # ===== REST PHASE ===== #
                 print(f"\n>>> REST PERIOD - {self.config.hybrid_rest_duration}s <<<")
                 AudioCues.phase_transition("REST")
                 
@@ -360,7 +369,7 @@ class MotorIntentDataAcquisition:
                 'rest_samples': labels.count('REST')
             })
             
-            print(f"\n✓ Saved: {full_path}")
+            print(f"\n Saved: {full_path}")
             print(f"  Total samples: {len(all_samples)}")
             print(f"  MI samples: {labels.count('MI')} | REST samples: {labels.count('REST')}")
             
@@ -373,10 +382,10 @@ class MotorIntentDataAcquisition:
             return False
     
     def run_trial(self, trial_info):
-        """Execute a single trial (dispatches to hybrid or standard recording)"""
+        """Execute a single trial based on trial_info"""
         state = trial_info['state']
         
-        # Check if this is a hybrid trial
+        # Check if this is a hybrid trial and dispatch accordingly
         if state == MotorIntentState.MOTOR_IMAGERY_HYBRID:
             return self.run_hybrid_trial(trial_info)
         
@@ -475,8 +484,12 @@ class MotorIntentDataAcquisition:
         
         print(f"\n Session metadata saved at: {metadata_filename}")
     
-    def run_session(self):
-        """Execute the complete data acquisition session"""
+    def run_session(self, hybrid_only=False):
+        """Execute the complete data acquisition session
+        
+        Args:
+            hybrid_only: If True, only run MOTOR_IMAGERY_HYBRID trials
+        """
         print("\n" + "="*60)
         print(" MOTOR INTENT EEG DATA ACQUISITION")
         print("="*60)
@@ -485,7 +498,7 @@ class MotorIntentDataAcquisition:
         self.conduct_pre_session_survey()
         
         # 2. Generate trial sequence
-        self.generate_trial_sequence()
+        self.generate_trial_sequence(hybrid_only=hybrid_only)
         
         # 3. Display session info
         self.display_session_info()
@@ -497,14 +510,14 @@ class MotorIntentDataAcquisition:
         for trial_info in self.trial_sequence:
             success = self.run_trial(trial_info)
             if not success:
-                print("\n⚠️  Trial failed. Do you want to continue? (y/n)")
+                print("\n Trial failed. Do you want to continue? (y/n)")
                 if input().lower() != 'y':
                     break
             
             # Rest between trials
             self.inter_trial_rest()
         
-        # 6. Session end
+        #  Session end
         AudioCues.session_end()
         print("\n" + "="*60)
         print("  SESSION COMPLETED!")
@@ -514,7 +527,7 @@ class MotorIntentDataAcquisition:
         # Post-session survey
         self.conduct_post_session_survey()
         
-        # 7. Save metadata
+        #  Save metadata
         self.save_session_metadata()
         
         print("=" * 60)
@@ -522,9 +535,7 @@ class MotorIntentDataAcquisition:
        
 
 
-# ============================================
-# INTERACTIVE CONFIGURATION
-# ============================================
+# ********** INTERACTIVE CONFIGURATION *********** #
 
 def configure_session() -> SessionConfig:
     """Interactive session configuration"""
@@ -567,10 +578,9 @@ def configure_session() -> SessionConfig:
     return config
 
 
-# ============================================
-# STREAM VERIFICATION
-# ============================================
 
+# **************  STREAM VERIFICATION ************** #
+# This function overrides EEGRecording class stream verification for better user feedback.
 def verify_stream():
     """Verify that muselsl stream is running"""
     print("\n" + "="*60)
@@ -608,40 +618,67 @@ def verify_stream():
         return True
 
 
-# ============================================
-# MAIN FUNCTION
-# ============================================
 
-def main():
-    """Main entry point"""
-    print("\n" + "="*70)
-    print("  MOTOR INTENT EEG DATA ACQUISITION SYSTEM")
-    print("  Muse 2 Headset - Research Edition")
-    print("="*70)
+#  ************ SESSION WRAPPER FUNCTIONS ************ #
+
+
+def hybrid_session():
+    """Sesión híbrida con motor imagery y rest alternados (solo trials híbridos)"""
+    print("\n" + "="*60)
+    print("  SESIÓN HÍBRIDA - MOTOR IMAGERY + REST")
+    print("="*60 + "\n")
     
-    # Check for stream
+    # Verificar stream
     if not verify_stream():
-        print("\n Stream not detected.")
-        sys.exit(1)
+        print("\n Stream no detectado.")
+        return
     
-    # Configure session
+    # Configurar sesión
     config = configure_session()
     
-    # Create and run session
-    acquisition = MotorIntentDataAcquisition(config)
+    # Crear y ejecutar sesión (solo trials híbridos)
+    acquisition = MotorImageryDataAcquisition(config)
     
     try:
-        acquisition.run_session()
+        acquisition.run_session(hybrid_only=True)
     except KeyboardInterrupt:
-        print("\n\n Session interrupted by user. ")
-        print(f"Trials completed: {len(acquisition.session_metadata)}")
+        print("\n\n  Sesión interrumpida por el usuario.")
+        print(f"Trials completados: {len(acquisition.session_metadata)}")
         if acquisition.session_metadata:
             acquisition.save_session_metadata()
     except Exception as e:
-        print(f"\n Error during session: {e}")
+        print(f"\n Error durante la sesión: {e}")
         import traceback
         traceback.print_exc()
 
 
-if __name__ == "__main__":
-    main()
+def static_session():
+    """Sesión completa con múltiples estados y audio cues"""
+    print("\n" + "="*60)
+    print("  SESIÓN COMPLETA DE INVESTIGACIÓN")
+    print("="*60 + "\n")
+    
+    # Verificar stream
+    if not verify_stream():
+        print("\n Stream no detectado.")
+        return
+    
+    # Configurar sesión
+    config = configure_session()
+    
+    # Crear y ejecutar sesión
+    acquisition = MotorImageryDataAcquisition(config)
+    
+    try:
+        acquisition.run_session()
+    except KeyboardInterrupt:
+        print("\n\n  Sesión interrumpida por el usuario.")
+        print(f"Trials completados: {len(acquisition.session_metadata)}")
+        if acquisition.session_metadata:
+            acquisition.save_session_metadata()
+    except Exception as e:
+        print(f"\n Error durante la sesión: {e}")
+        import traceback
+        traceback.print_exc()
+
+
