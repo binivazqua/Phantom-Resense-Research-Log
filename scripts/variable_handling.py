@@ -82,9 +82,8 @@ class CualitativeSurvey:
         motor_imagery_intensity = int(input("Intensidad de la imaginación motora (1-5): "))
         ending_notes = input("Notas adicionales al finalizar la sesión (opcional): ").lower().strip()
 
-        # Crear la row del dict:
+        # Crear la row del dict (sin P_ID ya que viene del initial_response)
         row = {
-            "P_ID": self.p_id,
             "Overall_Focus_Level": overall_focus_level,
             "Motor_Imagery_Intensity": motor_imagery_intensity,
             "Ending_Notes": ending_notes,
