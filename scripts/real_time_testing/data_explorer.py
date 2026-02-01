@@ -6,12 +6,30 @@ import atexit
 from collections import deque
 
 import numpy as np
+
+# Set matplotlib backend BEFORE importing pyplot
+# macOS-specific: Try multiple backends in order of preference
+import matplotlib
+try:
+    # Try Qt5Agg first (usually best for macOS animations)
+    matplotlib.use('Qt5Agg')
+    print("[MATPLOTLIB] Using Qt5Agg backend")
+except:
+    try:
+        # Fallback to MacOSX native backend
+        matplotlib.use('MacOSX')
+        print("[MATPLOTLIB] Using MacOSX backend")
+    except:
+        # Last resort: TkAgg
+        matplotlib.use('TkAgg')
+        print("[MATPLOTLIB] Using TkAgg backend")
+
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from pylsl import StreamInlet, resolve_streams
 
 # --------- CONFIG ----------
-MUSE_MAC = "00:55:da:b5:b3:1e"
+MUSE_MAC = "00:55:da:b7:e7:7c"  # Update with your Muse 2 MAC address
 WAIT_AFTER_START_S = 8
 
 WINDOW_SECONDS = 5
@@ -107,16 +125,21 @@ def main():
     for i, ax in enumerate(axes):
         ax.set_ylabel(CHANNEL_NAMES[i])
         ax.grid(True, alpha=0.3)
+        ax.set_ylim(-200, 200)  # Initial y-axis range for EEG (microvolts)
         line, = ax.plot(list(tbuf), list(ybufs[i]))
         lines.append(line)
     axes[-1].set_xlabel("Tiempo (s)")
+    axes[-1].set_xlim(-WINDOW_SECONDS, 0)  # Initial x-axis range
 
     start_wall = time.time()
     last_print = 0.0
     samples_total = 0
+    update_count = 0  # Track how many times update is called
 
     def update(_frame):
-        nonlocal last_print, samples_total
+        nonlocal last_print, samples_total, update_count
+        
+        update_count += 1
 
         chunk, ts = inlet.pull_chunk(timeout=0.0, max_samples=max(16, int(fs // 10)))
 
@@ -139,17 +162,21 @@ def main():
         if now - last_print > 1.0:
             last_print = now
             if samples_total == 0:
-                print("[DBG] Aún no llegan muestras EEG...")
+                print(f"[DBG] update_count={update_count} | Aún no llegan muestras EEG...")
             else:
                 rng = []
                 for ch in range(4):
                     y = np.asarray(ybufs[ch], dtype=np.float32)
                     rng.append((float(np.min(y)), float(np.max(y))))
-                print(f"[DBG] samples_total={samples_total}  ranges={rng}")
+                print(f"[DBG] update_count={update_count} | samples_total={samples_total} | ranges={rng} | buffer_len={len(tbuf)}")
 
+        # ALWAYS update plot data, even if no new samples arrived
         x = np.asarray(tbuf, dtype=np.float64)
         if len(x) > 2:
-            axes[-1].set_xlim(x[-1] - WINDOW_SECONDS, x[-1])
+            x_min = x[-1] - WINDOW_SECONDS
+            x_max = x[-1]
+            for ax in axes:
+                ax.set_xlim(x_min, x_max)
 
         for i in range(4):
             y = np.asarray(ybufs[i], dtype=np.float32)
@@ -159,14 +186,15 @@ def main():
                 lo, hi = np.percentile(y, [5, 95])
                 pad = max(1e-6, (hi - lo) * 0.2)
                 axes[i].set_ylim(lo - pad, hi + pad)
-
+        
         return lines
 
     # CLAVE: guardar referencia a la animación para que NO se destruya
-    anim = FuncAnimation(fig, update, interval=30, blit=False, cache_frame_data=False)
-
+    print("\n[INFO] Starting animation... Window should appear now.")
+    anim = FuncAnimation(fig, update, interval=30, blit=True, cache_frame_data=False)
+    
     plt.tight_layout()
-    plt.show()
+    plt.show()  # Simplified - just show the plot
 
 
 if __name__ == "__main__":
