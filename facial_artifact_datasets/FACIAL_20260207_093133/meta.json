@@ -1,0 +1,29 @@
+{
+  "session_id": "FACIAL_20260207_093133",
+  "started_at": "2026-02-07 09:31:33",
+  "muse_mac": "00:55:da:b5:b3:1e",
+  "fs_nominal": 256.0,
+  "channels": [
+    "TP9",
+    "AF7",
+    "AF8",
+    "TP10"
+  ],
+  "actions": [
+    "REPOSO",
+    "PARPADEO_DERECHO",
+    "PARPADEO_IZQUIERDO",
+    "LEVANTAR_CEJAS"
+  ],
+  "action_duration_s": 3.0,
+  "rest_duration_s": 4.0,
+  "stopped_at": "2026-02-07 09:31:45",
+  "samples_total": 1,
+  "dropouts": 0,
+  "event_counts": {
+    "REPOSO": 4,
+    "PARPADEO_DERECHO": 2,
+    "PARPADEO_IZQUIERDO": 1,
+    "LEVANTAR_CEJAS": 1
+  }
+}

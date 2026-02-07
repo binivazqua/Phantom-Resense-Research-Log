@@ -1,0 +1,29 @@
+{
+  "session_id": "FACIAL_20260207_092403",
+  "started_at": "2026-02-07 09:24:03",
+  "muse_mac": "00:55:da:b5:b3:1e",
+  "fs_nominal": 256.0,
+  "channels": [
+    "TP9",
+    "AF7",
+    "AF8",
+    "TP10"
+  ],
+  "actions": [
+    "REST",
+    "RIGHT_BLINK",
+    "LEFT_BLINK",
+    "EYEBROW_RAISE"
+  ],
+  "action_duration_s": 3.0,
+  "rest_duration_s": 4.0,
+  "stopped_at": "2026-02-07 09:24:24",
+  "samples_total": 1,
+  "dropouts": 0,
+  "event_counts": {
+    "REST": 1,
+    "RIGHT_BLINK": 1,
+    "LEFT_BLINK": 0,
+    "EYEBROW_RAISE": 0
+  }
+}
